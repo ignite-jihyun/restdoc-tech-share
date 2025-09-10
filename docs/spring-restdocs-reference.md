@@ -2,7 +2,7 @@
 
 마지막 수정: 2025-09-10 06:57
 
-이 문서는 Spring REST Docs 공식 문서를 빠르게 찾고, 실제 업무에 바로 적용할 수 있도록 “어디를 읽고, 무엇을 하면 되는지”를 쉬운 말로 정리했습니다.
+이 문서는 Spring REST Docs 공식 문서를 빠르게 찾고, 실제 업무에 바로 적용할 수 있도록 “어디를 읽고, 무엇을 하면 되는지”를 정리했습니다.
 
 ## 1) 공식 문서 링크
 - HTML (한 페이지): https://docs.spring.io/spring-restdocs/docs/current/reference/htmlsingle/

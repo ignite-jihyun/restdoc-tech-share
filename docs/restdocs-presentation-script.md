@@ -1,4 +1,4 @@
-# Spring REST Docs 발표 스크립트 (쉬운 말 버전 대본)
+# Spring REST Docs 발표 스크립트
 
 - 관련 슬라이드: docs/restdocs-presentation.md
 
