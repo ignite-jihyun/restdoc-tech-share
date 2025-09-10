@@ -160,17 +160,16 @@ include::{{snippets}}/user-get/http-response.adoc[]
 include::{{snippets}}/user-get/response-fields.adoc[]
 ```
 - 빌드할 때 속성(attributes)으로 snippets 경로를 넘기거나, asciidoctor 작업에서 변수로 지정할 수 있습니다.
+---
 
 TOC 속성: AsciiDoc User Guide – Table of Contents
 - https://docs.asciidoctor.org/asciidoc/latest/toc/
-Doctype 속성: AsciiDoc User Guide – Document Types
+  Doctype 속성: AsciiDoc User Guide – Document Types
 - https://docs.asciidoctor.org/asciidoc/latest/document/doctypes/
-Attributes 전체 목록: AsciiDoc User Guide – Attributes
+  Attributes 전체 목록: AsciiDoc User Guide – Attributes
 - https://docs.asciidoctor.org/asciidoc/latest/attributes/document-attributes-ref/
 
 https://docs.asciidoctor.org/asciidoc/latest/attributes/document-attributes/
-
----
 
 ## 10. MockMvc 테스트 예시
 ```java
