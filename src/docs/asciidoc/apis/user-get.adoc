@@ -1,0 +1,7 @@
+=== 단건 조회 (GET /users/{id})
+ifdef::snippets[]
+include::{snippets}/user-get/http-request.adoc[]
+include::{snippets}/user-get/path-parameters.adoc[]
+include::{snippets}/user-get/http-response.adoc[]
+include::{snippets}/user-get/response-fields.adoc[]
+endif::[]

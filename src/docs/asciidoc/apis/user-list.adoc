@@ -1,0 +1,6 @@
+=== 목록 조회 (GET /users)
+ifdef::snippets[]
+include::{snippets}/user-list/http-request.adoc[]
+include::{snippets}/user-list/http-response.adoc[]
+include::{snippets}/user-list/response-fields.adoc[]
+endif::[]

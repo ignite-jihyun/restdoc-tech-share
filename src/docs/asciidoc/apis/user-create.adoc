@@ -1,0 +1,8 @@
+=== 생성 (POST /users)
+ifdef::snippets[]
+include::{snippets}/user-create/http-request.adoc[]
+include::{snippets}/user-create/request-fields.adoc[]
+include::{snippets}/user-create/response-headers.adoc[]
+include::{snippets}/user-create/http-response.adoc[]
+include::{snippets}/user-create/response-fields.adoc[]
+endif::[]

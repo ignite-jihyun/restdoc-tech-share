@@ -1,0 +1,6 @@
+=== 삭제 (DELETE /users/{id})
+ifdef::snippets[]
+include::{snippets}/user-delete/http-request.adoc[]
+include::{snippets}/user-delete/path-parameters.adoc[]
+include::{snippets}/user-delete/http-response.adoc[]
+endif::[]

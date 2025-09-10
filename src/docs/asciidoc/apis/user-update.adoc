@@ -1,0 +1,8 @@
+=== 수정 (PUT /users/{id})
+ifdef::snippets[]
+include::{snippets}/user-update/http-request.adoc[]
+include::{snippets}/user-update/path-parameters.adoc[]
+include::{snippets}/user-update/request-fields.adoc[]
+include::{snippets}/user-update/http-response.adoc[]
+include::{snippets}/user-update/response-fields.adoc[]
+endif::[]

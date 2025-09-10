@@ -1,0 +1,91 @@
+// ============================================================================
+// 빌드 스크립트: Spring Boot + Spring REST Docs + Asciidoctor 구성
+// ----------------------------------------------------------------------------
+// 목적
+// - 테스트 실행 시 REST Docs 스니펫(build/generated-snippets) 생성
+// - Asciidoctor로 HTML 문서(build/docs/asciidoc) 생성
+// - 생성된 HTML 문서를 리소스 경로(build/resources/main/static/docs)로 복사하여
+//   Spring Boot 애플리케이션 실행 시 http://localhost:8080/docs/index.html 로 정적 제공
+//
+// 참고
+// - 이 스크립트는 기능 변경 없이 주석을 강화한 버전입니다.
+// - 최종 수정: 2025-09-10 07:07
+// ============================================================================
+//file:noinspection GrDeprecatedAPIUsage
+
+plugins {
+    // Spring Boot 플러그인: 실행 가능한 JAR, 개발 편의 태스크(bootRun, bootJar) 제공
+    id 'org.springframework.boot' version '3.3.1'
+    // 의존성 버전 정합성(관리)을 위해 사용 (Spring BOM)
+    id 'io.spring.dependency-management' version '1.1.5'
+    // 자바 프로젝트 기본 플러그인
+    id 'java'
+    // Asciidoctor Gradle 플러그인: .adoc → HTML/PDF 변환 태스크(asciidoctor) 제공
+    id 'org.asciidoctor.jvm.convert' version '4.0.2'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+java {
+    // 컴파일/타겟 Java 버전(레코드, 텍스트 블록 등 JDK17 기능 사용)
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    // 표준 중앙 저장소
+    mavenCentral()
+}
+
+dependencies {
+    // 웹 애플리케이션 기본 스타터 (Spring MVC 포함)
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // 테스트 기본 스타터 (JUnit, AssertJ 등)
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // Spring REST Docs(MockMvc) — 테스트에서 스니펫 생성
+    // 버전은 공식 문서/샘플과 맞춰 관리(예: 3.0.2)
+    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc:3.0.2'
+}
+
+// test 태스크 설정
+// - JUnit 플랫폼 사용
+// - generated-snippets 디렉토리를 test 태스크의 출력으로 마킹하여
+//   이후 asciidoctor 태스크가 해당 산출물을 입력으로 사용할 수 있게 함
+tasks.named('test') {
+    useJUnitPlatform()
+    outputs.dir file("build/generated-snippets")
+}
+
+// Asciidoctor 태스크 설정
+// - 입력: build/generated-snippets (테스트 실행 결과물)
+// - baseDirFollowsSourceFile(): include 경로 기준을 소스 파일 위치로 따르게 함
+// - sources: 변환 대상 .adoc (여기서는 index.adoc 하나만 변환)
+// - attributes: {snippets} 속성을 빌드 경로로 지정하여 adoc에서 include에 사용
+// - resources: 추가 리소스(이미지 등) 포함
+asciidoctor {
+    // 스니펫이 먼저 생성되어야 하므로 test → asciidoctor 순으로 실행되는 것이 바람직합니다.
+    // 현재 파이프라인은 processResources가 asciidoctor에 의존하므로
+    // 일반적인 흐름에서 test → asciidoctor → processResources 순으로 수행됩니다.
+
+    inputs.dir file("build/generated-snippets")
+    baseDirFollowsSourceFile()
+    sources {
+        include 'index.adoc'
+    }
+    // adoc 내에서 {snippets}로 include 경로를 간결히 지정 가능
+    attributes 'snippets': file('build/generated-snippets')
+    resources {
+        // src/docs/asciidoc/images/** 를 그대로 출력 디렉토리에 복사
+        from('src/docs/asciidoc') { include 'images/**' }
+    }
+}
+
+// 생성된 HTML 문서를 클래스패스 리소스(정적)로 복사하는 태스크
+// - 목적: Boot 실행 시 정적 경로로 문서 제공(/docs)
+// - into 경로: build/resources/main/static/docs (processResources 결과물 위치)
+tasks.register('copyRestDocs', Copy) {
+    from("${buildDir}/docs/asciidoc")
+    into("src/resources/main/static/docs")
+}
