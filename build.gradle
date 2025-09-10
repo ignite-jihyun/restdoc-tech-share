@@ -87,5 +87,5 @@ asciidoctor {
 // - into 경로: build/resources/main/static/docs (processResources 결과물 위치)
 tasks.register('copyRestDocs', Copy) {
     from("${buildDir}/docs/asciidoc")
-    into("src/resources/main/static/docs")
+    into("src/main/resources/static/docs")
 }
