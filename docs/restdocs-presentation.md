@@ -200,6 +200,72 @@ class UserApiDocsTest {
 }
 ```
 
+### 10-1. document(...) 상세 가이드 (추가 설명)
+- 식별자(identifier): `document("user-get", ...)`의 `user-get`은 스니펫 폴더 이름이 됩니다. 생성 경로: `build/generated-snippets/user-get/*`
+- 주요 빌딩블록
+  - `pathParameters(...)`: 경로 변수 설명. 예: `/users/{id}` → `parameterWithName("id")`
+  - `requestParameters(...)`: 쿼리 파라미터 설명. 예: `?page=1&size=10`
+  - `requestParts(...)`: 멀티파트(part) 설명. 파일 업로드 등
+  - `requestFields(...)` / `responseFields(...)`: JSON 필드 설명 (타입/옵션/속성 등)
+- 필드 지정 고급 팁
+  - 선택/무시: `optional()`을 붙이면 선택 항목, `ignored()`는 문서 표에 표시만 하고 검증은 생략
+  - 타입 지정: `type(JsonFieldType.STRING)` 같이 명시 가능 (검출 실패/가독성 개선)
+  - 속성(attributes): `attributes(key("format").value("yyyy-MM-dd"))`, `key("example").value("2025-01-01")` 등으로 추가 정보 제공
+  - 중첩/배열: `fieldWithPath("orders[].id")`, `fieldWithPath("profile.address.city")`
+  - 부분 섹션: `subsectionWithPath("profile")`를 사용해 하위 객체 전체를 한 줄로 설명 가능
+- 완화된 매칭: `relaxedResponseFields(...)`/`relaxedRequestFields(...)`를 쓰면 명시하지 않은 필드가 있어도 실패하지 않음(편하지만 빠진 문서가 생길 수 있음)
+- 전처리기(preprocessors): pretty print/헤더 제거 등으로 예시를 보기 좋게
+  - `andDo(document("user-get", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())))`
+  - 예: `removeHeaders("X-Secret")`, `modifyUris().scheme("https").host("api.example.com").removePort(true)`
+- 검증 + 설명 결합: Bean Validation 제약은 `ConstraintDescriptions`로 자동 설명을 얻어 `description(...)`에 합치면 유지보수가 쉬워집니다(아래 부록 14 참조).
+
+확장 예시 코드
+```java
+@AutoConfigureMockMvc
+@SpringBootTest
+class UserApiDocsTest {
+  @Autowired MockMvc mockMvc;
+
+  @Test
+  void 사용자_조회_문서화_확장() throws Exception {
+    mockMvc.perform(get("/users/{id}", 1L).accept(MediaType.APPLICATION_JSON))
+      .andExpect(status().isOk())
+      .andDo(document("user-get",
+          preprocessRequest(prettyPrint()),
+          preprocessResponse(prettyPrint(), removeHeaders("Set-Cookie")),
+          pathParameters(
+              parameterWithName("id").description("사용자 ID")
+          ),
+          requestParameters(
+              parameterWithName("verbose").optional().description("자세한 정보 포함 여부 (기본값: false)")
+          ),
+          responseFields(
+              fieldWithPath("id").type(JsonFieldType.NUMBER).description("사용자 ID"),
+              fieldWithPath("name").type(JsonFieldType.STRING).description("이름"),
+              fieldWithPath("email").type(JsonFieldType.STRING)
+                  .description("이메일")
+                  .attributes(key("format").value("email")),
+              fieldWithPath("age").type(JsonFieldType.NUMBER).optional().description("나이(선택)"),
+              fieldWithPath("roles[]").type(JsonFieldType.ARRAY)
+                  .description("권한 목록 (예: USER, ADMIN)"),
+              subsectionWithPath("profile").description("프로필 하위 객체(필드 별도 문서화 가능)")
+          )
+      ));
+  }
+}
+```
+
+문서 포함 예시(Asciidoc):
+```
+include::{{snippets}}/user-get/http-request.adoc[]
+include::{{snippets}}/user-get/http-response.adoc[]
+include::{{snippets}}/user-get/path-parameters.adoc[]
+include::{{snippets}}/user-get/request-parameters.adoc[]
+include::{{snippets}}/user-get/response-fields.adoc[]
+```
+
+참고: enum 값은 설명에 가능한 값 목록을 적거나 별도 표를 두는 패턴을 권장합니다. 에러 응답은 공통 스키마로 표준화하여 재사용하세요.
+
 ---
 
 ## 11. RestAssured 테스트 예시

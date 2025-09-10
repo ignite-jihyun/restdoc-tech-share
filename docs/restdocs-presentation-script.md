@@ -70,6 +70,20 @@
 - [슬라이드 11–12]
 - “MockMvc나 RestAssured 테스트에서 andDo(document("…"))로 문서화 지점을 적어 둡니다. 경로 값, 요청/응답 필드를 설명하는 방식입니다.”
 
+## 10-1. document(...) 디테일 (0:20–0:21)
+- [슬라이드 10-1]
+- 핵심 멘트 순서 제안:
+  1) “document 식별자(user-get)는 스니펫 폴더 이름입니다. build/generated-snippets/user-get 아래에 생성돼요.”
+  2) “pathParameters, requestParameters, requestParts, requestFields/responseFields로 각각 경로/쿼리/멀티파트/JSON 필드를 설명합니다.”
+  3) “필드는 optional(), ignored(), type(JsonFieldType.*), attributes(key("format").value(...))로 더 풍부하게 문서화할 수 있습니다.”
+  4) “배열/중첩은 orders[].id, profile.address.city 처럼 경로를 쓰고, 큰 덩어리는 subsectionWithPath("profile")로 한 줄 요약이 가능합니다.”
+  5) “preprocessRequest/Response로 prettyPrint, 헤더 제거(removeHeaders)를 적용해 예시를 보기 좋게 만듭니다.”
+  6) “relaxedResponseFields는 빠진 필드가 있어도 테스트를 실패시키지 않습니다. 빠른 도입에 좋지만, 놓치는 문서가 생길 수 있어요.”
+  7) “Bean Validation 제약은 ConstraintDescriptions로 끌어와 description에 합치면 유지보수가 쉬워집니다.”
+- 짧은 예시 멘트:
+  - “이 API는 email 형식이고 예시는 attributes로 넣었습니다. roles[]는 배열, profile은 subsection으로 요약했어요.”
+- 팁: enum 값은 가능한 값 목록을 설명에 명시하거나 별도 표로 분리, 실패 응답(에러 포맷)은 공통 섹션으로 재사용.
+
 ---
 
 ## 11. 조각 문서와 결과 (0:20–0:21)
