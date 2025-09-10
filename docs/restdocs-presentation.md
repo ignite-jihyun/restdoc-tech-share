@@ -164,9 +164,11 @@ include::{{snippets}}/user-get/response-fields.adoc[]
 
 TOC 속성: AsciiDoc User Guide – Table of Contents
 - https://docs.asciidoctor.org/asciidoc/latest/toc/
-  Doctype 속성: AsciiDoc User Guide – Document Types
+
+Doctype 속성: AsciiDoc User Guide – Document Types
 - https://docs.asciidoctor.org/asciidoc/latest/document/doctypes/
-  Attributes 전체 목록: AsciiDoc User Guide – Attributes
+
+Attributes 전체 목록: AsciiDoc User Guide – Attributes
 - https://docs.asciidoctor.org/asciidoc/latest/attributes/document-attributes-ref/
 
 https://docs.asciidoctor.org/asciidoc/latest/attributes/document-attributes/
