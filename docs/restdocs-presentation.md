@@ -376,14 +376,97 @@ class UserApiRestAssuredDocsTest {
 ---
 
 ## 14. 문서 품질/맞춤 팁
-- ConstraintDescriptions로 Bean Validation 제약을 자동으로 설명할 수 있음
+
+문서를 “더 정확하고 보기 좋게” 만들기 위한 실전 팁입니다. 아래 네 가지를 적용하면 유지보수성과 통일감이 크게 올라갑니다.
+
+1) Bean Validation 제약 자동 설명(ConstraintDescriptions)
+- DTO에 @NotBlank, @Email, @Size 등 제약이 있을 때, 해당 속성의 제약을 자동으로 문자열 설명으로 구해 description에 붙일 수 있습니다.
+- 장점: DTO 변경 시 문서 설명을 일일이 고치지 않아도 대부분 자동 반영됩니다.
+
+예시 코드
 ```java
 var constraints = new ConstraintDescriptions(UserDto.class);
 String nameDesc = String.join(", ", constraints.descriptionsForProperty("name"));
 ```
-- 공통 헤더/에러 응답 조각 문서를 재사용 가능한 설명 정보로 빼서 관리
-- 예제 바디는 ObjectMapper pretty print로 보기 좋게 출력
-- 문서 스타일은 Asciidoctor 테마/하이라이트로 통일감 유지
+
+2) 공통 헤더/에러 응답 문구 재사용
+- 모든 API에 반복되는 헤더(예: Authorization, Correlation-Id), 공통 에러 바디(예: { code, message, traceId })는 조각 문서로 분리해 include로 재사용합니다.
+- 장점: 한 곳에서 설명을 관리하고, 모든 문서에 동일한 톤과 정확도를 유지.
+
+구성 예시(Asciidoc)
+```adoc
+// src/docs/asciidoc/common/headers.adoc
+|===
+|Name|Description
+|Authorization|Bearer 토큰. 형식: `Bearer {JWT}`
+|X-Correlation-Id|추적용 식별자. 요청-응답 전파
+|===
+
+// src/docs/asciidoc/common/error-response.adoc
+|===
+|Path|Type|Description
+|code|String|에러 코드(예: USER_NOT_FOUND)
+|message|String|사람이 읽을 수 있는 메시지
+|traceId|String|분석용 추적 ID
+|===
+```
+API 문서에서 재사용
+```adoc
+== 공통 정보
+include::common/headers.adoc[]
+include::common/error-response.adoc[]
+```
+
+3) 예제 바디 예쁘게(Pretty Print) + 민감정보 마스킹
+- 전처리기(preprocessors)로 요청/응답 바디를 들여쓰기(prettyPrint) 하고, 불필요한 헤더를 제거하면 가독성이 좋아집니다.
+- 민감정보(예: accessToken)는 마스킹하거나 제거하는 전처리를 추가하세요.
+
+예시 코드(MockMvc)
+```java
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
+
+@AutoConfigureMockMvc
+@SpringBootTest
+class UserApiDocsTest {
+    @Autowired MockMvc mockMvc;
+
+    @Test
+    void 사용자_조회_문서화_확장() throws Exception {
+        mockMvc.perform(get("/users/{id}", 1L).accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andDo(document("user-get",
+              preprocessRequest(prettyPrint(), removeHeaders("Cookie")),
+              preprocessResponse(prettyPrint(), removeHeaders("Set-Cookie", "Server"))
+            ));
+    }
+}
+```
+
+4) 문서 스타일 통일(Asciidoctor 테마/하이라이트)
+- 팀 전용 테마와 코드 하이라이트를 지정해서 모든 문서의 톤을 통일합니다.
+- HTML/PDF 공통 속성으로 글꼴, 색상, 코드 하이라이트 스타일을 정합니다.
+
+Gradle 속성 예시
+```gradle
+asciidoctor {
+  attributes(
+    'toc': 'left',
+    'toclevels': '3',
+    'sectnums': '',
+    'icons': 'font',
+    'source-highlighter': 'highlightjs',
+    'stylesheet': 'custom.css'
+  )
+  resources { from('src/docs/asciidoc') { include 'custom.css' } }
+}
+```
+- PDF를 쓸 경우 폰트 설정을 별도 적용(한글 깨짐 방지). 예: `-a pdf-theme=theme/my-theme.yml -a pdf-fontsdir=src/docs/asciidoc/fonts`.
+
+추가 팁(간단 체크리스트)
+- [ ] enum 필드는 가능한 값 목록을 표로 요약 또는 description에 명시
+- [ ] 날짜/통화 등 형식은 attributes(format)로 통일 표기
+- [ ] 실패 응답(4xx/5xx)은 공통 스키마로 문서화하고 모든 API에서 include
+- [ ] 샘플 값은 개인정보 노출 없이 현실적인 데이터로 구성
 
 ---
 
@@ -577,3 +660,67 @@ Markdown을 그대로 쓰고 싶을 때 선택지 3가지입니다. 팀 상황�
 - 단점: REST Docs 스니펫(.adoc)과의 스타일 통합은 추가 작업이 필요
 
 자세한 내용: docs/asciidoctor-setup.md 참조
+
+---
+
+## 부록 H. 정적 리소스 접근 실패 처리 (font-awesome.min.css 등)
+
+증상
+- 브라우저 네트워크 탭에 (failed) net::ERR_EMPTY_RESPONSE, net::ERR_BLOCKED_BY_CLIENT, 404/403 등이 보이고 글꼴/아이콘/CSS가 적용되지 않음.
+- 예: cdnjs에서 제공하는 Font Awesome, Google Fonts, 사내 프록시로 차단된 CDN.
+
+원인 요약
+- 외부 CDN 차단/간헐 장애, 프록시/방화벽/SSL 인터셉트, 잘못된 경로(/docs 기준 상대경로), CSP/SRI 미설정, 서버/프록시의 타임아웃.
+
+권장 대응 순서
+1) 경로 확인
+   - 정적 문서를 http://localhost:8080/docs/index.html 로 제공하는 경우, 내부 링크는 
+     - 절대 경로: "/docs/assets/..."
+     - 또는 index.html 기준 상대 경로: "./assets/..." 형태로 맞춥니다.
+   - 404인 경우, 브라우저 주소창/네트워크 탭에서 실제로 요청된 URL과 서버 로그를 함께 확인하세요.
+
+2) CDN → 로컬 자산으로 전환(권장)
+   - 외부 네트워크 의존을 제거하면 ERR_EMPTY_RESPONSE류 문제가 사라집니다.
+   - 선택 A: 정적 파일로 포함
+     - font-awesome.min.css, webfonts/* 등을 docs용 자산 디렉토리(e.g. src/docs/asciidoc/assets or src/main/resources/static/docs/assets)에 복사하고, 링크를 ./assets/... 로 바꿉니다.
+     - Asciidoctor 결과물을 copy할 때 assets 폴더를 함께 복사하세요.
+   - 선택 B: WebJars 사용(빌드/런타임 로컬 제공)
+     - Gradle 의존성(예):
+       - implementation "org.webjars:font-awesome:4.7.0" 또는 최신 버전
+     - 접근 경로: /webjars/font-awesome/4.7.0/css/font-awesome.min.css
+     - 문서의 <link>를 위 경로로 교체합니다.
+
+3) CDN을 계속 쓸 경우 안정성 확보
+   - integrity/crossorigin 속성을 추가해 무결성과 캐시 일관성을 높입니다.
+   - 사내 네트워크면 프록시/방화벽에 cdnjs.cloudflare.com, fonts.googleapis.com, fonts.gstatic.com 허용 등록.
+   - 리버스 프록시(Nginx 등)가 타임아웃으로 외부 응답을 닫아 ERR_EMPTY_RESPONSE가 날 수 있습니다. proxy_read_timeout, resolver, HTTP/2 설정을 점검하세요.
+
+4) Spring Boot 정적 리소스 제공 팁
+   - 기본 경로: classpath:/static/** → /static/docs/** 에 두면 /docs/**로 서비스됩니다.
+   - 현재 Gradle 설정에서 Asciidoctor 결과를 정적 경로로 복사한다면, CSS/JS/폰트도 함께 복사되도록 디렉토리 구조를 유지하세요.
+
+실전 예시: Font Awesome을 로컬로 전환
+- (1) src/main/resources/static/docs/assets/font-awesome/css/font-awesome.min.css
+- (2) src/main/resources/static/docs/assets/font-awesome/webfonts/*
+- (3) index.html의 링크 변경
+  <link rel="stylesheet" href="./assets/font-awesome/css/font-awesome.min.css">
+
+Nginx 예시 (CDN을 못 쓰는 망에서 내부 캐시/프락시)
+```
+location /docs/ {
+  alias /app/static/docs/;
+  add_header Cache-Control "public, max-age=86400";
+}
+# (옵션) 내부 프록시로 외부 CDN을 대체
+location /cdn/font-awesome/ {
+  proxy_pass https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/;
+  proxy_read_timeout 10s;
+}
+```
+
+체크리스트
+- [ ] 리소스 링크가 절대/상대 경로로 올바른가?
+- [ ] 외부 CDN을 쓰면 네트워크에서 허용되는가? (프록시/방화벽)
+- [ ] 가능하면 로컬 정적 자산 또는 WebJars로 전환했는가?
+- [ ] 리버스 프록시/게이트웨이 타임아웃으로 연결이 끊기지 않는가?
+- [ ] CSP/SRI 설정이 리소스를 차단하지 않는가?
